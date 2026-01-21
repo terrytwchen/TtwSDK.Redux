@@ -1,9 +1,6 @@
-﻿/* Project Folio Lite (ProjFolioLite)
- * Copyright (c) 2025 terrytw. All Rights Reserved.
- *
- * This source code is for portfolio and demonstration purposes only.
- * Unauthorized copying, modification, or distribution is strictly prohibited.
- * See LICENSE file in the project root for full terms and conditions.
+﻿/* TtwSDK.Redux
+ * Copyright (c) 2025 terrytw. Licensed under the MIT License.
+ * See LICENSE file for details.
  */
 
 using TtwSDK.Redux.Core;
