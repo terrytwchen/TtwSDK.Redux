@@ -21,20 +21,27 @@ public interface IStore
 }
 
 /// <summary>
-/// Represents a strongly-typed Redux store that manages a specific type of state.
+/// Defines a read-only contract for a Redux store.
+/// Views should depend on this interface to prevent accidental dispatching bypassing the central dispatcher.
 /// </summary>
-/// <typeparam name="TState">The type of the state managed by this store. Ideally, this should be an immutable record or struct.</typeparam>
-public interface IStore<TState> : IStore
+/// <typeparam name="TState">The type of the state.</typeparam>
+public interface IReadOnlyStore<out TState>
 {
     /// <summary>
     /// Gets the current snapshot of the state.
-    /// This property provides read-only access to the state for Views or Selectors.
     /// </summary>
     TState State { get; }
 
     /// <summary>
-    /// Occurs when the state has changed after an action was processed by the reducer.
-    /// Components should subscribe to this event to trigger UI updates (re-rendering).
+    /// Occurs when the state has changed.
     /// </summary>
     event Action<TState>? OnStateChanged;
+}
+
+/// <summary>
+/// Represents a strongly-typed Redux store that manages a specific type of state.
+/// </summary>
+/// <typeparam name="TState">The type of the state managed by this store. Ideally, this should be an immutable record or struct.</typeparam>
+public interface IStore<TState> : IStore, IReadOnlyStore<TState>
+{
 }

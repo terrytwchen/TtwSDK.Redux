@@ -6,69 +6,82 @@
 namespace TtwSDK.Redux.Core;
 
 /// <summary>
-/// A framework-agnostic observer that manages subscriptions to a Redux store.
-/// It handles the logic of selecting specific state slices and triggering callbacks only when values change (diffing).
-/// This class is designed to be used by UI adapters (e.g., Blazor components, Unity MonoBehaviours).
+/// A framework-agnostic observer that manages subscriptions to Redux stores.
+/// It acts as a bridge between the Store (Model) and the View (UI), handling diffing and lifecycle management.
 /// </summary>
 public class StateObserver : IDisposable
 {
     private readonly List<Action> _disposables = new();
-    private readonly Action _onStateChangedCallback;
+    private readonly Action? _onGlobalStateChanged;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StateObserver"/> class.
     /// </summary>
-    /// <param name="onStateChangedCallback">
-    /// The callback to invoke when any observed state slice changes.
-    /// For Blazor, this is typically `StateHasChanged`.
-    /// For Unity, this might be a repaint call.
+    /// <param name="onStateChanged">
+    /// An optional callback invoked whenever *any* observed state changes.
+    /// Useful for framework-level repaints (e.g., Blazor's StateHasChanged, Unity's Repaint).
     /// </param>
-    public StateObserver(Action onStateChangedCallback)
+    public StateObserver(Action? onStateChanged = null)
     {
-        _onStateChangedCallback = onStateChangedCallback ?? throw new ArgumentNullException(nameof(onStateChangedCallback));
+        _onGlobalStateChanged = onStateChanged;
     }
 
     /// <summary>
-    /// Subscribes to a specific slice of the state within a store.
-    /// The <see cref="_onStateChangedCallback"/> is triggered only if the selected value changes compared to the previous state.
+    /// Subscribes to a specific slice of the state.
+    /// Checks for equality before triggering callbacks to avoid unnecessary updates.
     /// </summary>
-    /// <typeparam name="TState">The type of the state held by the store.</typeparam>
-    /// <typeparam name="TValue">The type of the specific value to observe.</typeparam>
-    /// <param name="store">The store instance to observe.</param>
-    /// <param name="selector">A pure function to extract the desired value from the state.</param>
-    public void Observe<TState, TValue>(IStore<TState> store, Func<TState, TValue> selector)
+    /// <typeparam name="TState">The type of the store's state.</typeparam>
+    /// <typeparam name="TValue">The type of the value to select.</typeparam>
+    /// <param name="store">The store to observe.</param>
+    /// <param name="selector">A pure function to extract the value from the state.</param>
+    /// <param name="onValueChanged">
+    /// An optional callback invoked specifically when this selected value changes.
+    /// Passes the new value as an argument.
+    /// </param>
+    /// <returns>The current value of the selected state slice (useful for initialization).</returns>
+    public TValue Observe<TState, TValue>(
+        IReadOnlyStore<TState> store, 
+        Func<TState, TValue> selector, 
+        Action<TValue>? onValueChanged = null)
     {
-        // Capture the initial value to perform diffing later.
+        // 1. Capture initial value for diffing
         TValue lastValue = selector(store.State);
 
-        void HandleChange(TState newState)
+        // 2. Define the handler logic
+        void HandleStoreUpdate(TState newState)
         {
             TValue newValue = selector(newState);
 
-            // Use the default equality comparer to check if the value has effectively changed.
-            // This prevents unnecessary UI updates if the state reference changed but the specific value did not.
+            // Diffing: Only trigger if value actually changed
             if (!EqualityComparer<TValue>.Default.Equals(lastValue, newValue))
             {
                 lastValue = newValue;
-                _onStateChangedCallback.Invoke();
+                
+                // Specific callback (Push Model)
+                onValueChanged?.Invoke(newValue);
+                
+                // Global callback (Pull Model / Repaint Signal)
+                _onGlobalStateChanged?.Invoke();
             }
         }
 
-        // Subscribe to the store's event.
-        store.OnStateChanged += HandleChange;
+        // 3. Subscribe to the store
+        store.OnStateChanged += HandleStoreUpdate;
 
-        // Register the unsubscription logic to be called when this observer is disposed.
-        _disposables.Add(() => store.OnStateChanged -= HandleChange);
+        // 4. Register cleanup
+        _disposables.Add(() => store.OnStateChanged -= HandleStoreUpdate);
+
+        return lastValue;
     }
 
     /// <summary>
-    /// Unsubscribes from all observed stores and clears the disposable list.
+    /// Unsubscribes from all observed stores.
     /// </summary>
     public void Dispose()
     {
-        foreach (var disposeAction in _disposables)
+        foreach (var dispose in _disposables)
         {
-            disposeAction.Invoke();
+            dispose.Invoke();
         }
         _disposables.Clear();
         GC.SuppressFinalize(this);

@@ -7,7 +7,7 @@ namespace TtwSDK.Redux.Core;
 
 /// <summary>
 /// Represents a generic Redux store that manages the application state.
-/// This implementation uses a lock to ensure thread safety during state updates.
+/// Thread-safe implementation using locks.
 /// </summary>
 /// <typeparam name="TState">The type of the state managed by this store. Ideally, this should be an immutable record or class.</typeparam>
 public class Store<TState> : IStore<TState>
@@ -34,7 +34,7 @@ public class Store<TState> : IStore<TState>
     public Store(TState initialState, Reducer<TState> reducer)
     {
         State = initialState;
-        _reducer = reducer;
+        _reducer = reducer ?? throw new ArgumentNullException(nameof(reducer));
     }
 
     /// <summary>
@@ -55,6 +55,7 @@ public class Store<TState> : IStore<TState>
             var previousState = State;
             var newState = _reducer(previousState, action);
 
+            // Reference equality check or structural equality check depends on TState implementation (record vs class)
             if (!EqualityComparer<TState>.Default.Equals(previousState, newState))
             {
                 State = newState;
