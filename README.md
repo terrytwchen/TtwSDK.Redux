@@ -1,5 +1,5 @@
 # TtwSDK.Redux
-
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/terrytwchen/TtwSDK.Redux)
 **A lightweight, thread-safe Redux implementation for C# with built-in Thunk support.**
 
 `TtwSDK.Redux` is a predictable state container for .NET applications. It helps you write applications that behave consistently, run in different environments (Client, Server, and Native), and are easy to test.
@@ -87,9 +87,9 @@ git submodule add https://github.com/terrytwchen/TtwSDK.Redux.git
 ### Option 2: Manual Copy
 Download the source code from this repository.
 
-Copy the TtwSDK.Redux folder into your project's solution folder (for Blazor) or Assets folder (for Unity).
+Copy the `TtwSDK.Redux` folder into your project's solution folder (for Blazor) or Assets folder (for Unity).
 
-## Getting Started
+💡Note for Unity Developers: This SDK includes a `.asmdef` file for faster compilation. If your project utilizes its own Assembly Definitions (e.g., for `VContainer` or Tests), ensure you add a reference to TtwSDK.Redux in your Inspector.
 
 ### 1. Define State
 
