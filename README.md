@@ -76,6 +76,19 @@ Managing state in complex applications can quickly become chaotic. Redux offers 
 
 - .NET 8.0 SDK or later (Nullable reference types enabled)
 
+## Installation
+
+### Option 1: Git Submodule (Recommended)
+This is the best way to keep the SDK updated. Run the following command in your project root:
+```bash
+git submodule add https://github.com/terrytwchen/TtwSDK.Redux.git
+```
+
+### Option 2: Manual Copy
+Download the source code from this repository.
+
+Copy the TtwSDK.Redux folder into your project's solution folder (for Blazor) or Assets folder (for Unity).
+
 ## Getting Started
 
 ### 1. Define State
