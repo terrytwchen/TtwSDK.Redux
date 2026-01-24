@@ -1,5 +1,5 @@
 # TtwSDK.Redux
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/terrytwchen/TtwSDK.Redux)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/terrytwchen/TtwSDK.Redux)  
 **A lightweight, thread-safe Redux implementation for C# with built-in Thunk support.**
 
 `TtwSDK.Redux` is a predictable state container for .NET applications. It helps you write applications that behave consistently, run in different environments (Client, Server, and Native), and are easy to test.
