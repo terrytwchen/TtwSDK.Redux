@@ -76,6 +76,34 @@ public class StoreTests
     }
 
     [Fact]
+    public async Task Dispatch_UnderConcurrency_ConvergesToCorrectState_EventualConsistency()
+    {
+        // Documents the DELIBERATE trade-off (decision A): OnStateChanged fires OUTSIDE the
+        // lock with a captured snapshot, so under concurrent dispatches subscribers may be
+        // notified out of order or observe a snapshot that is already stale relative to
+        // Store.State by the time the callback reads it. We do NOT guarantee strict
+        // notification ordering. What we DO guarantee is that every state transition happens
+        // atomically under the lock, so Store.State always converges to the correct final
+        // value with no lost updates (eventual consistency). UI re-render reads the latest
+        // state, so this is acceptable for the intended use.
+        const int dispatchCount = 1000;
+        var store = new Store<CounterState>(new CounterState(0), IdentityOrIncrementReducer);
+
+        var notifications = 0;
+        store.OnStateChanged += _ => Interlocked.Increment(ref notifications);
+
+        var tasks = Enumerable.Range(0, dispatchCount)
+            .Select(_ => Task.Run(() => store.Dispatch(new IncrementAction())))
+            .ToArray();
+        await Task.WhenAll(tasks);
+
+        // No lost updates: every increment applied exactly once despite concurrency.
+        Assert.Equal(dispatchCount, store.State.Count);
+        // Every state-changing dispatch raised exactly one notification.
+        Assert.Equal(dispatchCount, notifications);
+    }
+
+    [Fact]
     public async Task Dispatch_CalledReentrantlyFromOnStateChanged_DoesNotDeadlock()
     {
         // Regression test for REDUX-ISSUE-001: OnStateChanged must fire outside the lock,
