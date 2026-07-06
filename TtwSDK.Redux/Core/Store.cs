@@ -43,13 +43,21 @@ public class Store<TState> : IStore<TState>
     /// <remarks>
     /// This method is thread-safe using a lock.
     /// <para>
-    /// The <see cref="OnStateChanged"/> event is invoked only if the new state is different from the previous state 
+    /// The <see cref="OnStateChanged"/> event is invoked only if the new state is different from the previous state
     /// (checked via <see cref="EqualityComparer{T}.Default"/>).
+    /// </para>
+    /// <para>
+    /// The event is invoked outside of the lock, using a captured snapshot of the new state. This keeps the lock's
+    /// hold time short and avoids deadlocks when a subscriber re-enters <see cref="Dispatch"/> from within the
+    /// callback (e.g. a UI repaint that triggers another dispatch).
     /// </para>
     /// </remarks>
     /// <param name="action">The action to be processed.</param>
     public void Dispatch(IAction action)
     {
+        TState? snapshot = default;
+        bool changed = false;
+
         lock (_lock)
         {
             var previousState = State;
@@ -59,8 +67,14 @@ public class Store<TState> : IStore<TState>
             if (!EqualityComparer<TState>.Default.Equals(previousState, newState))
             {
                 State = newState;
-                OnStateChanged?.Invoke(State);
+                snapshot = newState;
+                changed = true;
             }
+        }
+
+        if (changed)
+        {
+            OnStateChanged?.Invoke(snapshot!);
         }
     }
 }
